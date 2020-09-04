@@ -1,2 +1,3 @@
-# foodgram-project
-foodgram-project
+# Dev сервер запущен на http://178.154.247.103:1234/
+Можно поклацать
+
