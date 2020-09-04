@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load get_tags %}
+{% block title %}{% if request.path == '/recipes/' %}Рецепты
+{% elif request.path == '/user/favorites/' %}Избранное{% else %}{{author}}{% endif %}{% endblock %}
+{% block css %}<link rel="stylesheet" href="{% static 'pages/index.css' %}">{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+ <div class="main__header">
+            <h1 class="main__title">{% if request.path == '/recipes/' %}Рецепты
+            {% elif request.path == '/user/favorites/' %}Избранное{% else %}{{author}}{% endif %}</h1>
+            <ul class="tags">
+                <li class="tags__item">
+                    <a id="breakfast" class="tags__checkbox tags__checkbox_style_orange {% if 'breakfast' in tag_list %}tags__checkbox_active{% endif %}" href="{{request.path}}?tag={{request|get_tags:"breakfast"}}"></a>
+                    <span class="tags__label">Завтрак</span>
+                </li>
+                <li class="tags__item">
+                    <a id="lunch" class="tags__checkbox tags__checkbox_style_green {% if 'lunch' in tag_list %}tags__checkbox_active{% endif %}" href="{{request.path}}?tag={{request|get_tags:"lunch"}}"></a>
+                    <span for="lunch" class="tags__label">Обед</span>
+                </li>
+                <li class="tags__item">
+                    <a id="dinner" class="tags__checkbox tags__checkbox_style_purple {% if 'dinner' in tag_list %}tags__checkbox_active{% endif %}" href="{{request.path}}?tag={{request|get_tags:"dinner" }}"></a>
+                    <label for="dinner" class="tags__label">Ужин</label>
+                </li>
+            </ul>
+        </div>
+        {% if request.path != '/recipes/' and request.path != '/user/favorites/' and request.user.is_authenticated %}
+        <p style="padding: 0 0 2em 0;"><a class="button button_style_light-blue" href="{% url 'add_subscriptions_url' %}?author={{author}}{% if subsc %}&sub=on{% endif %}">{% if not subsc %}Подписаться на автора{% else %}Отписаться от автора{% endif %}</a></p>
+        {% endif %}
+        <div class="card-list">
+            {% for recipe in recipes %}
+        <div class="card" data-id="{{recipe.id}}">
+            <a href="{% url 'single_page_url' recipe.slug %}" class="link" ><img src="/media/{{recipe.image}}" alt="{{recipe.name}}" class="card__image"></a>
+            <div class="card__body">
+                <a class="card__title link" href="{% url 'single_page_url' recipe.slug %}" >{{recipe.name}}</a>
+                <ul class="card__items">
+                    {% if 'lunch' in recipe.tag %} <li class="card__item"><span class="badge badge_style_green">Обед</span></li>{% endif %}
+                    {% if 'breakfast' in recipe.tag %}<li class="card__item"><span class="badge badge_style_orange">Завтрак</span></li>{% endif %}
+                    {% if 'dinner' in recipe.tag %}<li class="card__item"><span class="badge badge_style_purple">Ужин</span></li>{% endif %}
+                </ul>
+                <div class="card__items card__items_column">
+                    <p class="card__text"><span class="icon-time"></span> {{recipe.preparing_time}} мин.</p>
+                    <p class="card__text"><span class="icon-user"></span> <a href="{% url 'author_url' recipe.author.username %}" style="color: black">{{recipe.author.username}}</a></p>
+                </div>
+            </div>
+            <div class="card__footer">
+                {% if not recipe.id in buying_list %}
+                <button class="button button_style_light-blue" name="purchpurchases" data-out><span class="icon-plus button__icon"></span>Добавить в покупки</button>
+                {% else %}
+                <button class="button button_style_light-blue-outline" name="purchpurchases"><span class="icon-check button__icon"></span> Рецепт добавлен</button>
+                {% endif %}
+                {% if request.user.is_authenticated %}
+                <button class="button button_style_none" name="favorites" {% if not recipe.id in fav_list %}data-out{% endif %}><span class="icon-favorite {% if recipe.id in fav_list %}icon-favorite_active{% endif %}"></span></button>
+                {% endif %}
+            </div>
+        </div>
+          {% endfor %}
+    </div>
+
+{% include 'pag.html' with recipes=recipes%}   
+{% endblock %}
+
+{% block JS %}
+<script src="{% static 'js/components/MainCards.js' %}"></script>
+<script src="{% static 'js/components/Purchpurachases.js' %}"></script>
+{% if request.user.is_authenticated %}<script src="{% static 'js/components/Favorites.js' %}"></script>{% endif %}
+<script src="{% static 'js/components/CardList.js' %}"></script>
+<script src="{% static 'js/components/Header.js' %}"></script>
+<script src="{% static 'js/api/Api.js' %}"></script>
+{% if request.path != '/user/favorites/' %}
+{% if request.user.is_authenticated %}
+<script src="{% static 'indexAuth.js' %}"></script>
+{% else %}
+<script src="{% static 'indexNotAuth.js' %}"></script>
+{% endif %}
+{% endif %}
+{% if request.path == '/user/favorites/' %}
+<script src="{% static 'favorite.js' %}"></script>
+{% endif %}
+{% endblock %}

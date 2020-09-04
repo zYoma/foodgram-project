@@ -1,0 +1,17 @@
+from django.urls import path
+from .views import AddRecipe, Find_Ingredients, Index
+from .views import SinglePage, EditRecipe, Author
+from .views import Subscriptions, DeleteRecipe
+
+
+urlpatterns = [
+    path('add/', AddRecipe.as_view(), name='add_recipes_url'),
+    path('ingredients/', Find_Ingredients.as_view(), name='find_ingredients_url'),
+    path('', Index.as_view(), name='index_url'),
+    path('edit/<str:slug>/', EditRecipe.as_view(), name='edit_recipes_url'),
+    path('delete/<str:slug>/', DeleteRecipe.as_view(), name='delete_recipes_url'),
+    path('author/<str:username>/', Author.as_view(), name='author_url'),
+    path('subscriptions/<int:id>/', Subscriptions.as_view(), name='del_subscriptions_url'),
+    path('subscriptions/', Subscriptions.as_view(), name='add_subscriptions_url'),
+    path('<str:slug>/', SinglePage.as_view(), name='single_page_url'),
+]

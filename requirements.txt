@@ -1,0 +1,10 @@
+asgiref==3.2.10
+Django==3.1.1
+django-debug-toolbar==2.2
+django-environ==0.4.5
+django-multiselectfield==0.1.12
+Pillow==7.2.0
+psycopg2-binary==2.8.5
+pytils==0.3
+pytz==2020.1
+sqlparse==0.3.1
