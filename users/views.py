@@ -1,19 +1,18 @@
-from django.shortcuts import render
-from django.shortcuts import redirect
-from django.urls import reverse
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import render
+from django.shortcuts import redirect
 from django.views.generic import View
 from .forms import UserRegistrationForm
 from recipes.models import Recipe, Subscription, Favorite, ShoppingList
-from recipes.services import get_paginator, ObjectMixin
-import json
+from recipes.mixins import IndexPageMixin
+from recipes.services import get_paginator
 
 
 def register(request):
-    '''Представление формы регистрации пользователя'''
+    """ Представление формы регистрации пользователя. """
     if request.method == 'POST':
         user_form = UserRegistrationForm(request.POST)
         if user_form.is_valid():
@@ -33,7 +32,7 @@ def register(request):
 
 
 class Follows(LoginRequiredMixin, View):
-    '''Представление страницы Мои подписки'''
+    """ Представление страницы Мои подписки. """
     login_url = '/user/login/'
 
     def get(self, request):
@@ -42,20 +41,21 @@ class Follows(LoginRequiredMixin, View):
         return render(request, 'users/myFollow.html', context={'follows': follows })
 
 
-class Favorites(LoginRequiredMixin, ObjectMixin, View):
-    '''Представление страницы Избранное'''
+class Favorites(LoginRequiredMixin, IndexPageMixin, View):
+    """ Представление страницы Избранное. """
     login_url = '/user/login/'
     model = Favorite
 
 
-class Shopping(ObjectMixin, View):
-    '''Представление страницы Список покупок'''
+class Shopping(IndexPageMixin, View):
     model = ShoppingList
 
     def get(self, request):
-        '''Если пользователь не авторизирован, используем сессии'''
+        """ Представление страницы Список покупок.
+            Если пользователь не авторизирован, используем сессии.
+        """
         if request.user.is_authenticated:
-            recipes = Recipe.objects.filter(shopping_list__user=request.user)
+            recipes = Recipe.objects.filter(shopping_lists__user=request.user)
         else:
             buying_list = request.session.get('shopping_list', [])
             recipes = Recipe.objects.filter(id__in=buying_list)
@@ -63,20 +63,20 @@ class Shopping(ObjectMixin, View):
 
 
 def get_shop_list(request):
-    '''Функция возвращает файл со списком ингридиентов'''
+    """ Функция возвращает файл со списком ингридиентов. """
     result = create_shopping_list(request)
-    filename = "ingredients.txt"
+    filename = 'ingredients.txt'
     response = HttpResponse(result, content_type='text/plain')
     response['Content-Disposition'] = 'attachment; filename={0}'.format(filename)
     return response
 
 
 def create_shopping_list(request):
-    '''Алгоритм формирования списка ингридиентов для покупки.
-       Складывает значения одинаковых ингредиентов и формирует читабельный список.
-    '''
+    """ Алгоритм формирования списка ингридиентов для покупки.
+        Складывает значения одинаковых ингредиентов и формирует читабельный список.
+    """
     if request.user.is_authenticated:
-        recipes = Recipe.objects.filter(shopping_list__user=request.user)
+        recipes = Recipe.objects.filter(shopping_lists__user=request.user)
     else:
         buying_list = request.session.get('shopping_list', [])
         recipes = Recipe.objects.filter(id__in=buying_list)

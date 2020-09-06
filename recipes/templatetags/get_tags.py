@@ -4,9 +4,9 @@ register = template.Library()
 
 @register.filter 
 def get_tags(request, tag):
-    '''функция формирует значение для атрибута tag.
-       Необходимо для работы фильтрации по тегам.
-    '''
+    """ Функция формирует значение для атрибута tag.
+        Необходимо для работы фильтрации по тегам.
+    """
     if 'tag' in request.GET:
         t = request.GET.get('tag')
         t = t.split('__')

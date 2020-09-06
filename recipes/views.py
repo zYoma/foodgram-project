@@ -1,29 +1,30 @@
-from django.shortcuts import render
-from django.shortcuts import redirect
-from django.urls import reverse
+import json
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import User
+from django.db.models import F, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import render
+from django.shortcuts import redirect
 from django.views.generic import View
-from django.db.models import F, Q
-from django.contrib.auth.models import User
-from .forms import RecipeForm
-from .services import assembly_ingredients, get_paginator, ObjectMixin
-from .models import Ingredient, Ingredient_quantity, Recipe
+from .models import Ingredient, Recipe
 from .models import Subscription, Favorite, ShoppingList
-import json
+from .mixins import IndexPageMixin
+from .forms import RecipeForm
+from .services import assembly_ingredients, get_paginator
+from. services import get_id_recipe, change_ingredients, get_author
 
 
-class Index(ObjectMixin, View):
+class Index(IndexPageMixin, View):
     pass
 
 
-class Author(ObjectMixin, View):
+class Author(IndexPageMixin, View):
     pass
 
 
 class SinglePage(View):
-    '''Представление для отдельной страницы рецепта.'''
+    """ Представление для отдельной страницы рецепта. """
     def get(self, request, slug):
         subsc = False
         fav = False
@@ -36,7 +37,7 @@ class SinglePage(View):
             buying = request.session.get('shopping_list', [])
             buying = True if recipe.id in buying else False
 
-        return render(request, 'recipes/singlePage.html', context={
+        return render(request, 'recipes/single_page.html', context={
             'recipe': recipe,
             'subsc': subsc,
             'fav': fav,
@@ -44,10 +45,10 @@ class SinglePage(View):
         })
 
 
-class Find_Ingredients(View):
-    '''Поиск ингридиентов при вводе в input на странице
-       добавления рецепта. Возвращает json c результатами поиска.
-    '''
+class FindIngredients(View):
+    """ Поиск ингридиентов при вводе в input на странице
+        добавления рецепта. Возвращает json c результатами поиска.
+    """
     def get(self, request):
         q = request.GET.get('query', '')
         results = list(Ingredient.objects.filter(name__istartswith=q)
@@ -56,7 +57,7 @@ class Find_Ingredients(View):
 
 
 class AddRecipe(LoginRequiredMixin, View):
-    '''Представление формы добавления рецепта'''
+    """ Представление формы добавления рецепта. """
     login_url = '/user/login/'
 
     def get(self, request):
@@ -79,17 +80,17 @@ class AddRecipe(LoginRequiredMixin, View):
         else:
             return render(request, 'recipes/recipe_form.html', context={'form': form})
 
-        return redirect(reverse('single_page_url',  kwargs={'slug': new_recipe.slug}))
+        return redirect('single_page_url',  slug=new_recipe.slug)
 
 
 class EditRecipe(LoginRequiredMixin, View):
-    '''Представление формы редактирования рецепта'''
+    """ Представление формы редактирования рецепта. """
     login_url = '/user/login/'
 
     def get(self, request, slug):
         recipe = get_object_or_404(Recipe, slug=slug)
         if request.user != recipe.author:
-            return redirect(reverse('single_page_url',  kwargs={'slug': recipe.slug}))
+            return redirect('single_page_url', slug=recipe.slug)
 
         form = RecipeForm(instance=recipe)
         return render(request, 'recipes/recipe_form.html', context={'form': form, 'recipe': recipe})
@@ -97,7 +98,7 @@ class EditRecipe(LoginRequiredMixin, View):
     def post(self, request, slug):
         recipe = get_object_or_404(Recipe, slug=slug)
         if request.user != recipe.author:
-            return redirect(reverse('single_page_url',  kwargs={'slug': recipe.slug}))
+            return redirect('single_page_url', slug=recipe.slug)
 
         ingredients = recipe.ingredients.all()
         form = RecipeForm(request.POST, request.FILES, instance=recipe)
@@ -107,54 +108,46 @@ class EditRecipe(LoginRequiredMixin, View):
        
         if form.is_valid():
             form.save()
-            if ingredients_list != list(ingredients) and ingredients_list != []:
-                ingredients.delete()
-                recipe.ingredients.add(*ingredients_list)
+            change_ingredients(ingredients_list, ingredients, recipe)
         else:
             return render(request, 'recipes/recipe_form.html', context={'form': form, 'recipe': recipe})
 
-        return redirect(reverse('single_page_url',  kwargs={'slug': recipe.slug}))
+        return redirect('single_page_url', slug=recipe.slug)
 
 
 class DeleteRecipe(LoginRequiredMixin, View):
-    '''Удаление рецепта'''
     login_url = '/user/login/'
 
     def post(self, request, slug):
+        """ Удаление рецепта. """
         recipe = get_object_or_404(Recipe, slug=slug)
         if request.user != recipe.author:
-            return redirect(reverse('single_page_url',  kwargs={'slug': recipe.slug}))
+            return redirect('single_page_url',  slug=recipe.slug)
 
         recipe.delete()
-        return redirect(reverse('index_url'))
+        return redirect('index_url')
 
 
 class Subscriptions(LoginRequiredMixin, View):
     login_url = '/user/login/'
 
     def get(self, request):
-        '''Так как специалисты по фронтенду сделали на разных страницах
-           обсолютно по разному обработку одного и тогоже действия
-           пришлось немного закостылить, чтобы не повторяться.
-        '''
+        """ Так как специалисты по фронтенду сделали на разных страницах
+            обсолютно по разному обработку одного и тогоже действия
+            пришлось немного закостылить, чтобы не повторяться.
+        """
         author = request.GET.get('author')
         if 'sub' in request.GET:
             get_object_or_404(Subscription.objects.select_related('author'),
                 user=request.user, author__username=author).delete()
-
         else:
             self.post(request, author)
-        return redirect(reverse('author_url',  kwargs={'username': author}))
+
+        return redirect('author_url',  username=author)
 
     def post(self, request, author=None):
-        '''Создание подписки на автора если ее еще нет.'''
-        if author is None:
-            body = json.loads(request.body)
-            recipe_id = body.get('id')
-            author = get_object_or_404(Recipe.objects.select_related('author'), id=recipe_id).author
-        else:
-            author = get_object_or_404(User, username=author)
-
+        """ Создание подписки на автора если ее еще нет. """
+        author = get_author(request, author)
         user = request.user
         subs, created = Subscription.objects.get_or_create(
             defaults={
@@ -165,21 +158,21 @@ class Subscriptions(LoginRequiredMixin, View):
             author=author,
         )
         if created:
-            results = {"success": True}
+            results = {'success': True}
         else:
-            results = {"success": False}
+            results = {'success': False}
         return JsonResponse(results, safe=False, json_dumps_params={'ensure_ascii': False})
 
 
     def delete(self, request, id):
-        '''Удаляем подписку если она существует'''
+        """ Удаляем подписку если она существует. """
         author = get_object_or_404(Recipe.objects.select_related('author'), id=id).author
         try:
             subs = Subscription.objects.get(user=request.user, author=author)
         except Subscription.DoesNotExist:
-            results = {"success": False}
+            results = {'success': False}
         else:
             subs.delete()
-            results = {"success": True}
+            results = {'success': True}
 
         return JsonResponse(results, safe=False, json_dumps_params={'ensure_ascii': False})

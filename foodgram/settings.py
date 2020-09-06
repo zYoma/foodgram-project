@@ -73,6 +73,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'recipes.context_processors.purchases_processor',
             ],
         },
     },
@@ -156,6 +157,4 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = 465
 EMAIL_USE_SSL = True
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-
-TEMPLATES[0]['OPTIONS']['context_processors'].append(
-    "recipes.context_processors.purchases_processor")
+RECIPE_IMAGE_LIMIT = 50

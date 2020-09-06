@@ -13,13 +13,13 @@
             {% csrf_token %}
             {% for field in user_form %}
 
-            <div class="form__group">
-                <label for="id_first_name" class="form__label">{{field.label}}</label>
-                <div class="form__field-group">
-                    {{field|addclass:"form__input"}}
-                    {% if field.errors %}<span class="form__error">{{field.errors}}</span>{% endif %}
+                <div class="form__group">
+                    <label for="id_first_name" class="form__label">{{ field.label }}</label>
+                    <div class="form__field-group">
+                        {{ field|addclass:"form__input" }}
+                        {% if field.errors %}<span class="form__error">{{ field.errors }}</span>{% endif %}
+                    </div>
                 </div>
-            </div>
 
             {% endfor %}
 

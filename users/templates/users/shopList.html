@@ -6,26 +6,26 @@
 
 {% block content %}
 {% csrf_token %}
-            <div class="main__header">
+    <div class="main__header">
         <h1 class="main__title">Список покупок</h1>
     </div>
     <div class="card-list card-list_column">
         <ul class="shopping-list">
             {% for recipe in recipes %}
-            <li class="shopping-list__item" data-id="{{recipe.id}}">
-                <div class="recipe recipe_reverse">
-                    <img src="/media/{{recipe.image}}" alt="{{recipe.name}}" class="recipe__image recipe__image_big">
-                    <h3 class="recipe__title">{{recipe.name}}</h3>
-                    <p class="recipe__text"><span class="icon-time"></span> {{recipe.preparing_time}} мин.</p>
-                </div>
-                <a href="#" class="shopping-list__button link">Удалить</a>
-            </li>
+                <li class="shopping-list__item" data-id="{{ recipe.id }}">
+                    <div class="recipe recipe_reverse">
+                        <img src="{% get_media_prefix %}{{ recipe.image }}" alt="{{ recipe.name }}" class="recipe__image recipe__image_big">
+                        <h3 class="recipe__title">{{ recipe.name }}</h3>
+                        <p class="recipe__text"><span class="icon-time"></span> {{ recipe.preparing_time }} мин.</p>
+                    </div>
+                    <a href="#" class="shopping-list__button link">Удалить</a>
+                </li>
             {% endfor %}
             
         </ul>
-        <a href="{% url 'shop_list_url' %}"><button class="button button_style_blue">Скачать список</button></a>
-
-
+        {% if purchases_count != 0 %}
+            <a href="{% url 'shop_list_url' %}"><button class="button button_style_blue">Скачать список</button></a>
+        {% endif %}
     </div>
 {% endblock %}
 
