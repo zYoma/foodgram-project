@@ -2,11 +2,8 @@ from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 from django.conf.urls import handler404, handler500
-from django.urls import path
-from django.urls import include
-from .views import page_not_found
-from .views import server_error
-from .views import redirect_recipes
+from django.urls import path, include
+from .views import page_not_found, server_error, redirect_recipes
 
 
 handler404 = 'foodgram.views.page_not_found'

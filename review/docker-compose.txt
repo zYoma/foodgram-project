@@ -1,0 +1,40 @@
+version: '3.3'
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: postgres55
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./.env
+  web:
+    build: .
+    restart: always
+    command: bash -c "python manage.py migrate && gunicorn foodgram.wsgi:application --bind 0.0.0.0:8000 --timeout 90"
+    expose:
+    - 8000
+    volumes:
+      - static_volume:/code/static
+      - media_volume:/code/media
+    depends_on:
+      - db
+    env_file:
+      - ./.env
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    volumes:
+      - static_volume:/code/static
+      - media_volume:/code/media
+    ports:
+      - 1337:80
+    depends_on:
+      - web

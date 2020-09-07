@@ -3,16 +3,24 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db.models import F, Q
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from django.shortcuts import render
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import View
-from .models import Ingredient, Recipe
-from .models import Subscription, Favorite, ShoppingList
+from .models import (
+    Ingredient,
+    Recipe,
+    Subscription,
+    Favorite,
+    ShoppingList,
+)
 from .mixins import IndexPageMixin
 from .forms import RecipeForm
-from .services import assembly_ingredients, get_paginator
-from. services import get_id_recipe, change_ingredients, get_author
+from .services import (
+    assembly_ingredients,
+    get_paginator,
+    get_id_recipe,
+    change_ingredients,
+    get_author,
+)
 
 
 class Index(IndexPageMixin, View):
@@ -35,7 +43,7 @@ class SinglePage(View):
             buying = ShoppingList.objects.filter(user=request.user, recipe=recipe).exists()
         else:
             buying = request.session.get('shopping_list', [])
-            buying = True if recipe.id in buying else False
+            buying = recipe.id in buying
 
         return render(request, 'recipes/single_page.html', context={
             'recipe': recipe,
@@ -69,7 +77,7 @@ class AddRecipe(LoginRequiredMixin, View):
         ingredients_names = request.POST.getlist('nameIngredient')
         ingredients_values = request.POST.getlist('valueIngredient')
         ingredients_list = assembly_ingredients(ingredients_names, ingredients_values)
-        if ingredients_list == []:
+        if not ingredients_list:
             return render(request, 'recipes/recipe_form.html', context={'form': form, 'error': True})
 
         if form.is_valid():

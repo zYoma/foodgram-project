@@ -21,7 +21,7 @@
                 {% endif %}
             </div>
             <ul class="single-card__items">
-                {{ recipe.id|get_recipe_tags|safe }}
+                {{ recipe.tag|get_recipe_tags|safe }}
             </ul>
             <div class="single-card__items single-card__items_column">
                 <p class="single-card__text"><span class="icon-time"></span> {{ recipe.preparing_time }} мин.</p>

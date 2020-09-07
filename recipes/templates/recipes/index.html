@@ -37,7 +37,7 @@
                 <div class="card__body">
                     <a class="card__title link" href="{% url 'single_page_url' recipe.slug %}" >{{ recipe.name }}</a>
                     <ul class="card__items">
-                        {{ recipe.id|get_recipe_tags|safe }}
+                        {{ recipe.tag|get_recipe_tags|safe }}
                     </ul>
                     <div class="card__items card__items_column">
                         <p class="card__text"><span class="icon-time"></span> {{ recipe.preparing_time }} мин.</p>

@@ -1,7 +1,14 @@
 from django.urls import path
-from .views import AddRecipe, FindIngredients, Index
-from .views import SinglePage, EditRecipe, Author
-from .views import Subscriptions, DeleteRecipe
+from .views import (
+	AddRecipe,
+	FindIngredients,
+	Index,
+    SinglePage,
+    EditRecipe,
+    Author,
+    Subscriptions,
+    DeleteRecipe,
+)
 
 
 urlpatterns = [

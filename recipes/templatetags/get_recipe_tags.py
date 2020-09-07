@@ -1,13 +1,9 @@
 from django import template
-from django.shortcuts import get_object_or_404
-from recipes.models import Recipe
 
 register = template.Library()
 
 @register.filter 
-def get_recipe_tags(recipe_id):
-    recipe = get_object_or_404(Recipe, id=recipe_id)
-    tags_list = recipe.tag
+def get_recipe_tags(tags_list):
     tags = ''
     if 'lunch' in tags_list:
         tags += str('<li class="card__item"><span class="badge badge_style_green">Обед</span></li>')

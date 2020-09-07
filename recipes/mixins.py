@@ -1,12 +1,12 @@
 from django.db.models import F, Q
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
 from .models import Recipe, Subscription, Favorite, ShoppingList
 from .services import get_paginator, get_id_recipe
 
 
-class IndexPageMixin():
+class IndexPageMixin:
     """ Класс миксин. Для того, чтобы не копипастить одни и теже методы
         в нескольких предтсавлениях.
     """
@@ -51,9 +51,9 @@ class IndexPageMixin():
         """
         recipe_id = get_id_recipe(request)
         if request.user.is_authenticated:    
-            results = create_bay_or_fav(request, recipe_id, model=self.model)
+            results = create_buy_or_fav(request, recipe_id, model=self.model)
         else:
-            results = create_bay_or_fav_for_guest(request, recipe_id)
+            results = create_buy_or_fav_for_guest(request, recipe_id)
 
         return JsonResponse(results, safe=False, json_dumps_params={'ensure_ascii': False})
 
@@ -63,9 +63,9 @@ class IndexPageMixin():
             Для неавторизированных пользователей на основе сессий.
         """
         if request.user.is_authenticated:
-            results = delete_bay_or_fav(request, id, model=self.model)
+            results = delete_buy_or_fav(request, id, model=self.model)
         else:
-            results = delete_bay_or_fav_for_guest(request, id)
+            results = delete_buy_or_fav_for_guest(request, id)
 
         return JsonResponse(results, safe=False, json_dumps_params={'ensure_ascii': False})
 
@@ -84,10 +84,9 @@ def formation_tags(request, recipes):
 def get_subscription(request, username):
     """ Функция возвращает True если пользователь подписан на автора. """
     subsc = False
-    if username is not None:
-        if request.user.is_authenticated:
-            subsc = Subscription.objects.select_related('author').filter(
-                user=request.user, author__username=username).exists()
+    if username is not None and request.user.is_authenticated:
+        subsc = Subscription.objects.select_related('author').filter(
+            user=request.user, author__username=username).exists()
 
     return subsc
 
@@ -116,7 +115,7 @@ def get_fav_list(request):
 def get_recipes(request, username, fav_list):
     """ Функция возвращает список рецептов в зависимости от того, с какой страницы был запрос. """
     if username is None:
-        if request.path == '/user/favorites/':
+        if request.path == reverse('favorites_url'):
             recipes = Recipe.objects.select_related('author').filter(id__in=fav_list)
         else:
             recipes = Recipe.objects.select_related('author').all()
@@ -126,7 +125,7 @@ def get_recipes(request, username, fav_list):
     return recipes
 
 
-def create_bay_or_fav(request, recipe_id, model):
+def create_buy_or_fav(request, recipe_id, model):
     """ Функция создает объекты списка покупок и избранного для автоизированного пользователя. """
     recipe = get_object_or_404(Recipe, id=recipe_id)
     user = request.user
@@ -138,28 +137,25 @@ def create_bay_or_fav(request, recipe_id, model):
         user=user,
         recipe=recipe,
     )
-    if created:
-        results = {'success': True}
-    else:
-        results = {'success': False}
 
-    return results
+    return {'success': bool(created)}
 
 
-def create_bay_or_fav_for_guest(request, recipe_id):
+def create_buy_or_fav_for_guest(request, recipe_id):
     """ Функция создает объекты списка покупок и избранного для гостей (сессии). """
     if 'shopping_list' in request.session:
         shopping_list = request.session['shopping_list']
-        if not int(recipe_id) in shopping_list:
-            shopping_list.append(int(recipe_id))
-            request.session['shopping_list'] = shopping_list
+        recipe_id = int(recipe_id)
+        if not recipe_id in shopping_list:
+            shopping_list.append(recipe_id)
+            request.session['shopping_list'] =shopping_list
     else:
-        request.session['shopping_list'] = [int(recipe_id)]
+        request.session['shopping_list'] = [recipe_id]
 
     return {'success': True}
 
 
-def delete_bay_or_fav(request, id, model):
+def delete_buy_or_fav(request, id, model):
     """ Функция удаляет объект из списка покупок или избранного у авторизированного поьзователя. """
     recipe = get_object_or_404(Recipe, id=id)
     try:
@@ -173,7 +169,7 @@ def delete_bay_or_fav(request, id, model):
     return results
 
 
-def delete_bay_or_fav_for_guest(request, id):
+def delete_buy_or_fav_for_guest(request, id):
     """ Функция удаляет объект из списка покупок или избранного у гостей (сессиии). """
     shopping_list = request.session.get('shopping_list')
     try:
