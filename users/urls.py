@@ -1,5 +1,6 @@
 from django.contrib.auth import views
 from django.urls import path
+
 from .forms import EmailValidationOnForgotPassword
 from .views import register, Follows, Favorites, Shopping, get_shop_list
 

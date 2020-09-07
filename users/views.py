@@ -2,6 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import View
+
 from .forms import UserRegistrationForm
 from recipes.models import Recipe, Subscription, Favorite, ShoppingList
 from recipes.mixins import IndexPageMixin

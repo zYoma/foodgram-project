@@ -1,10 +1,12 @@
 import json
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db.models import F, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import View
+
 from .models import (
     Ingredient,
     Recipe,
